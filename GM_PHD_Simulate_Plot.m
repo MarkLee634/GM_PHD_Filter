@@ -13,14 +13,14 @@ if(PLOT_ALL_MEASUREMENTS == false)
 end
 hold on;
 
-%Plot all measurements, including clutter, as black 'x'
-if(~isempty(Z))
-    plot(Z(1,:), Z(2,:), 'xk');
-end
-%Plot noisy measurements of true target position(s), as black 'o'
-if(~isempty(zTrue))
-    plot(zTrue(1,:), zTrue(2,:), 'ok');
-end
+% %Plot all measurements, including clutter, as black 'x'
+% if(~isempty(Z))
+%     plot(Z(1,:), Z(2,:), 'xk');
+% end
+% %Plot noisy measurements of true target position(s), as black 'o'
+% if(~isempty(zTrue))
+%     plot(zTrue(1,:), zTrue(2,:), 'ok');
+% end
 
 %Plot target 1 true position as red dots
 plot(simTarget1History(1,:), simTarget1History(2,:), '.-r');
@@ -30,10 +30,27 @@ plot(simTarget2History(1,:), simTarget2History(2,:), '.-b');
 if(~isempty(simTarget3History))
     plot(simTarget3History(1,:), simTarget3History(2,:), '.-g');
 end
-%Plot tracked targets as magenta circles
-if(~isempty(X_k_history))
-    plot(X_k_history(1,:), X_k_history(2,:), 'om');
+% %Plot tracked targets as magenta circles
+% if(~isempty(X_k_history))
+%     plot(X_k_history(1,:), X_k_history(2,:), 'om');
+% end
+dim = size(X_k);
+trackEstimateNum = dim(2);
+if (trackEstimateNum == 3)
+    plot(X_k(1,1), X_k(2,1), 'or')
+    plot(X_k(1,2), X_k(2,2), 'ob')
+    plot(X_k(1,3), X_k(2,3), 'og')
 end
+
+if (trackEstimateNum == 2)
+    plot(X_k(1,1), X_k(2,1), 'or')
+    plot(X_k(1,2), X_k(2,2), 'ob')
+end
+
+if (trackEstimateNum == 1)
+    plot(X_k(1,1), X_k(2,1), 'or')
+end
+
 xlabel('X position');
 ylabel('Y position');
 title('Simulated targets and measurements');
@@ -42,19 +59,16 @@ axis square;
 %For extracted targets, plot latest target(s) as cyan triangle, and draw an
 %error ellipse to show uncertainty
 if(~isempty(X_k))
-    plot(X_k(1,:), X_k(2,:), '^c');
+%     plot(X_k(1,:), X_k(2,:), '^c');
     [nRows, nCols] = size(X_k);
     for c = 1:nCols
        thisMu = X_k(1:2, c);
        covRange = calculateDataRange4(c);
        thisCov = X_k_P(:,covRange);
        thisCov = thisCov(1:2, 1:2); %We only care about position
-       error_ellipse(thisCov, thisMu);
+%        error_ellipse(thisCov, thisMu);
     end
-    if(DRAW_VELOCITIES == 1)
-      %Draw velocities of targets   
-      quiver(X_k(1,:), X_k(2,:), X_k(3,:), X_k(4,:))          
-    end
+
 end
 
 %Individual X and Y components of measurements

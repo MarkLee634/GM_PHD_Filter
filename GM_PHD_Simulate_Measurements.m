@@ -72,6 +72,12 @@ else
     measY3 = [];
 end
 
+if(rem(k,10)==0)
+    measX1 = [];
+    measY1 = [];
+
+end
+
 %Generate true measurement
 Z = [ [measX1 measX2 measX3]; [measY1 measY2 measY3] ];
 zTrue = Z;%Store for plotting

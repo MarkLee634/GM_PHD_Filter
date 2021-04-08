@@ -12,7 +12,7 @@ disp(s);
 w_k = zeros(1, numTargets_Jk_k_minus_1 * size(Z, 2) + numTargets_Jk_k_minus_1);
 m_k = zeros(4, numTargets_Jk_k_minus_1 * size(Z, 2) + numTargets_Jk_k_minus_1);
 P_k =  zeros(size(Pk_k_minus_1,1), size(Pk_k_minus_1,1) * (numTargets_Jk_k_minus_1 * size(Z, 2) + numTargets_Jk_k_minus_1));
-score_k = zeros(1, numTargets_Kk_k_minus_1 * size(Z,2) + numTargets_Kk_k_minus_1);
+score_k = zeros(1, numTargets_Jk_k_minus_1 * size(Z,2) + numTargets_Jk_k_minus_1);
 %First we assume that we failed to detect all targets.
 %We scale all weights by probability of missed detection
 %We already did the prediction step for these so their position &

@@ -113,7 +113,7 @@ while (k < endTime)%k = timestep
     end
     
     %Step Metric: Calculate performance metric
-    GM_PHD_Calculate_Performance_Metric;
+    %GM_PHD_Calculate_Performance_Metric;
     
     %Step Plot: Generate graphs
     %The EKF version uses an inverse sensor model.
@@ -128,4 +128,3 @@ while (k < endTime)%k = timestep
     end
 
 end
-

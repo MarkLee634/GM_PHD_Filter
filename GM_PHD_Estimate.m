@@ -33,18 +33,7 @@ if(OUTPUT_MULTIPLE_HIGH_WEIGHT_TARGETS == 0)
         thisP = P_bar_k(:,P_range);
         X_k_P = [X_k_P, thisP];
     end
-else
-    %If a target has a rounded weight greater than 1, output it multiple
-    %times. VERBOSE must be set to 1 to see the effects of this.
-    for i = 1:size(w_bar_k,2)
-       for j = 1:round(w_bar_k(i))
-            X_k = [X_k, m_bar_k(:,i)];
-            X_k_w = [X_k_w, w_bar_k(i)];
-            P_range = calculateDataRange4(i);
-            thisP = P_bar_k(:,P_range);
-            X_k_P = [X_k_P, thisP];
-       end
-    end
+
 end
 
 if(VERBOSE == 1)
@@ -58,4 +47,5 @@ if(VERBOSE == 1)
 end
 
 %Store history for plotting.
+X_k
 X_k_history = [X_k_history, X_k];

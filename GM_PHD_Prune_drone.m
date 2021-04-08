@@ -1,4 +1,3 @@
-
 %GM_PHD_Prune
 %Matlab code by Bryan Clarke b.clarke@acfr.usyd.edu.au 
 
@@ -11,7 +10,7 @@ s = sprintf('Step 5: Prune and merge targets.');
 disp(s);
 
 %% Prune out the low-weight targets
-I = find(w_k >= T);%Find targets with high enough weights
+I = find(w_k >= 0.01);%Find targets with high enough weights
 if(VERBOSE == 1)
     s = sprintf('The only tracks with high enough weights are:');
     disp(s);
@@ -20,9 +19,9 @@ end
 
 %% Merge the close-together targets
 l = 0;%Counts number of features
-w_bar_k = [];
-m_bar_k = [];
-P_bar_k = [];
+% w_bar_k = [];
+% m_bar_k = [];
+% P_bar_k = [];
 while isempty(I) == false %We delete from I as we merge
     l = l + 1;
     %Find j, which is i corresponding to highest w_k for all i in I
@@ -43,7 +42,7 @@ while isempty(I) == false %We delete from I as we merge
         P_range = calculateDataRange4(thisI); 
         mahal_dist = delta_m' * (P_k(:,P_range) \ delta_m);%Invert covariance via left division
         if(mahal_dist <= mergeThresholdU)
-            L = [L, thisI];
+            L = [L, thisI]
         end
     end
     if(VERBOSE == 1)
@@ -52,13 +51,13 @@ while isempty(I) == false %We delete from I as we merge
         disp(L);
     end
     %The new weight is the sum of the old weights
-    w_bar_k_l = sum(w_k(L));
+    w_bar_k_l = sum(w_k(L))
     
     %The new mean is the weighted average of the merged means
     m_bar_k_l = 0;
     for i = 1:length(L)
         thisI = L(i);
-        m_bar_k_l = m_bar_k_l + 1 / w_bar_k_l *  (w_k(thisI) * m_k(:,thisI));
+        m_bar_k_l = m_bar_k_l + 1 / w_bar_k_l *  (w_k(thisI) * m_k(:,thisI))
     end
    
     %Calculating covariance P_bar_k is a bit trickier
@@ -82,9 +81,16 @@ while isempty(I) == false %We delete from I as we merge
     end
     
     %Append the new values to the lists
-    w_bar_k = [w_bar_k, w_bar_k_l];
-    m_bar_k = [m_bar_k, m_bar_k_l];
-    P_bar_k = [P_bar_k, P_bar_k_l];
+    max_weight_index = rem(j,numTargets_Jk_minus_1);
+    if max_weight_index == 0 
+       max_weight_index =  numTargets_Jk_minus_1;
+    end
+    m_bar_k(:,max_weight_index) = m_bar_k_l;
+    w_bar_k(:,max_weight_index) = w_bar_k_l;
+    P_range = calculateDataRange4(max_weight_index);
+    P_bar_k(:,P_range) = P_bar_k_l;
+    
+
 end
 
 numTargets_J_pruned = size(w_bar_k,2);%The number of targets after pruning
@@ -98,4 +104,3 @@ numTargets_Jk_minus_1 = numTargets_J_pruned;%Number of targets in total, passed 
 wk_minus_1 = w_bar_k; %Weights from this iteration
 mk_minus_1 = m_bar_k; %Means from this iteration
 Pk_minus_1 = P_bar_k; %Covariances from this iteration
-
