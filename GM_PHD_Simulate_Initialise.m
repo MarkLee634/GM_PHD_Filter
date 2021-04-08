@@ -11,13 +11,15 @@
 
 %%Control parameters
 noiseScaler = 1.0;       %Adjust the strength of the noise on the measurements by adjusting this. Useful for debugging.
-nClutter = 50; %Assume constant 50 clutter measurements. Since clutter is Poisson distrbuted it might be more accurate to use nClutter = poissrnd(50) if you have the required Matlab toolbox. Constant 50 clutter works well enough for simulation purposes.
+nClutter = 1; %Assume constant 50 clutter measurements. Since clutter is Poisson distrbuted it might be more accurate to use nClutter = poissrnd(50) if you have the required Matlab toolbox. Constant 50 clutter works well enough for simulation purposes.
 
 %I haven't included descriptions of every variable because their names are
 %fairly self-explanatory
 endTime = 100;%Duration of main loop
 simTarget1Start = birth_mean1;
 simTarget2Start = birth_mean2;
+simTarget3Start = birth_mean3;
+
 simTarget1End = [500, -900]';
 simTarget2End = [900, -500]';
 simTarget3End = [-200, -750]';
@@ -31,15 +33,13 @@ simTarget3Start(3:4) = simTarget3Vel;
 %History arrays are mostly used for plotting.
 simTarget1History = simTarget1Start;
 simTarget2History = simTarget2Start;
-simTarget3History = [];
+simTarget3History = simTarget3Start;
 
 simMeasurementHistory = {};%We use a cell array so that we can have rows of varying length.
 
 simTarget1State = simTarget1Start;
 simTarget2State = simTarget2Start;
-simTarget3State = [];
-
-simTarget3SpawnTime = 66;%Target 3 is spawned from target 1 at t = 66s.
+simTarget3State = simTarget3Start;
 
 %Set up for plot
 %Measurements and targets plot

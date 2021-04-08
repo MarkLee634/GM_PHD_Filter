@@ -17,35 +17,54 @@
 %extracted state estimate is not fed back into the filter.
 s = sprintf('Step 6: Estimate target states');
 disp(s);
+
+%% simple version but fails for clutter, missed detection
 X_k = [];
 X_k_P = [];
 X_k_w = [];
 
-%OUTPUT_MULTIPLE_HIGH_WEIGHT_TARGETS is set in GM_PHD_Initialisation
-if(OUTPUT_MULTIPLE_HIGH_WEIGHT_TARGETS == 0)
-    i = find(w_bar_k > weightThresholdToBeExtracted);
-    X_k = m_bar_k(:,i);
-    X_k_w = w_bar_k(:,i);
-    for j = 1:length(i)
-        thisI = i(j);
-        P_range = calculateDataRange4(thisI);
+i = find(w_bar_k_fixed > weightThresholdToBeExtracted);
+X_k = m_bar_k_fixed(:,i);
+X_k_w = w_bar_k_fixed(:,i);
+for j = 1:length(i)
+    thisI = i(j);
+    P_range = calculateDataRange4(thisI);
+    
+    thisP = P_bar_k_fixed(:,P_range);
+    X_k_P = [X_k_P, thisP];
+end
 
-        thisP = P_bar_k(:,P_range);
-        X_k_P = [X_k_P, thisP];
-    end
-else
-    %If a target has a rounded weight greater than 1, output it multiple
-    %times. VERBOSE must be set to 1 to see the effects of this.
-    for i = 1:size(w_bar_k,2)
-       for j = 1:round(w_bar_k(i))
-            X_k = [X_k, m_bar_k(:,i)];
-            X_k_w = [X_k_w, w_bar_k(i)];
-            P_range = calculateDataRange4(i);
-            thisP = P_bar_k(:,P_range);
-            X_k_P = [X_k_P, thisP];
-       end
+if k>=80
+    stopHere = 0;
+end
+
+%% extended version to handle clutter, missed detection
+
+if k>=2
+    X_k = zeros(4,NUM_DRONES);
+    X_k_P = zeros(4,4*NUM_DRONES);
+    X_k_w = zeros(1,NUM_DRONES);
+    
+    for index = 1:length(w_bar_k_fixed)
+        %if only 1 is noise in [1 2 3], add predicted state to 1
+        if(w_bar_k_fixed(index) <= weightThresholdToBeExtracted)
+            X_k(:,index) = mk_minus_1(:,index);
+            X_k_w(index) = wk_minus_1(index);
+            
+            P_range = calculateDataRange4(index);
+            X_k_P(:,P_range) = Pk_minus_1(:,P_range);
+            
+        else %extract data above threshold
+            X_k(:,index) = m_bar_k_fixed(:,index);
+            X_k_w(index) = w_bar_k_fixed(index);
+            
+            P_range = calculateDataRange4(index);
+            X_k_P(:,P_range) = P_bar_k_fixed(:,P_range);
+        end
     end
 end
+
+
 
 if(VERBOSE == 1)
     s = sprintf('\t%d targets beleived to be valid:', size(X_k, 2));
@@ -57,5 +76,17 @@ if(VERBOSE == 1)
     end
 end
 
+
+
+%update values for next iteration (moved from prune to use in extracting
+%values below threshold
+wk_minus_1 = w_bar_k_fixed; %Weights from this iteration
+mk_minus_1 = m_bar_k_fixed; %Means from this iteration
+Pk_minus_1 = P_bar_k_fixed; %Covariances from this iteration
+
+X_k_P = abs(X_k_P);
+Pk_minus_1 = abs(Pk_minus_1);
+
 %Store history for plotting.
+X_k
 X_k_history = [X_k_history, X_k];

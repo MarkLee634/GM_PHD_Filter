@@ -5,35 +5,45 @@
 %This file plots the current measurements, true target position and estimated target
 %position, as well as a history of estimated target positions.
 
-disp('Plotting...')
+
 %Measurements
 figure(1);
-if(PLOT_ALL_MEASUREMENTS == false)
-    clf;%Only plot the most recent measurement.
-end
+clf;%Only plot the most recent measurement.
 hold on;
 
-%Plot all measurements, including clutter, as black 'x'
-if(~isempty(Z))
-    plot(Z(1,:), Z(2,:), 'xk');
-end
-%Plot noisy measurements of true target position(s), as black 'o'
-if(~isempty(zTrue))
-    plot(zTrue(1,:), zTrue(2,:), 'ok');
-end
+axis([0 300 0 300]);
+xlim([0 300]);
+ylim([0 300]);
+
+    
+% %Plot all measurements, including clutter, as black 'x'
+% if(~isempty(Z))
+%     plot(Z(1,:), Z(2,:), 'xk');
+% end
+% %Plot noisy measurements of true target position(s), as black 'o'
+% if(~isempty(zTrue))
+%     plot(zTrue(1,:), zTrue(2,:), 'ok');
+% end
 
 %Plot target 1 true position as red dots
-plot(simTarget1History(1,:), simTarget1History(2,:), '.-r');
+plot(simTarget1History(1,:), simTarget1History(2,:), 'xk');
 %Plot target 2 true position as blue dots
-plot(simTarget2History(1,:), simTarget2History(2,:), '.-b');
-%Plot target 3 true position as green dots
-if(~isempty(simTarget3History))
-    plot(simTarget3History(1,:), simTarget3History(2,:), '.-g');
-end
-%Plot tracked targets as magenta circles
-if(~isempty(X_k_history))
-    plot(X_k_history(1,:), X_k_history(2,:), 'om');
-end
+plot(simTarget2History(1,:), simTarget2History(2,:), 'xk');
+%Plot target 3 true position as green dot
+plot(simTarget3History(1,:), simTarget3History(2,:), 'xk');
+
+%Plot target 1 track position as red dots
+plot(X_k_history(1,1:3:end), X_k_history(2,1:3:end), '.r');
+%Plot target 2 track position as blue dots
+plot(X_k_history(1,2:3:end), X_k_history(2,2:3:end), '.b');
+%Plot target 3 track position as green dots
+plot(X_k_history(1,3:3:end), X_k_history(2,3:3:end), '.g');
+
+% 
+% %Plot tracked targets as magenta circles
+% if(~isempty(X_k_history))
+%     plot(X_k_history(1,:), X_k_history(2,:), 'om');
+% end
 xlabel('X position');
 ylabel('Y position');
 title('Simulated targets and measurements');
@@ -42,7 +52,7 @@ axis square;
 %For extracted targets, plot latest target(s) as cyan triangle, and draw an
 %error ellipse to show uncertainty
 if(~isempty(X_k))
-    plot(X_k(1,:), X_k(2,:), '^c');
+%     plot(X_k(1,:), X_k(2,:), '^c');
     [nRows, nCols] = size(X_k);
     for c = 1:nCols
        thisMu = X_k(1:2, c);
@@ -51,41 +61,68 @@ if(~isempty(X_k))
        thisCov = thisCov(1:2, 1:2); %We only care about position
        error_ellipse(thisCov, thisMu);
     end
-    if(DRAW_VELOCITIES == 1)
-      %Draw velocities of targets   
-      quiver(X_k(1,:), X_k(2,:), X_k(3,:), X_k(4,:))          
-    end
+
 end
 
 %Individual X and Y components of measurements
 figure(2);
+hold on
 subplot(2,1,1);
+
 plot(k, Z(1,:), 'xk');%X coord of clutter measurements
-if(~isempty(zTrue))
-    plot(k, zTrue(1,:), 'ok');
-end
-plot(k, zTrue(1,:), 'xk');%X coord of true measurement
+% if(~isempty(zTrue))
+%     plot(k, zTrue(1,:), 'ok');
+% end
 if(~isempty(X_k))
-    plot(k, X_k(1,:), 'om');
+    plot(k, X_k(1,1), '.r');
+    plot(k, X_k(1,2), '.b');
+    plot(k, X_k(1,3), '.g');
 end
+% legend(L, {'noise','x1','x2','x3'});
+
 subplot(2,1,2);
 plot(k, Z(2,:), 'xk');%Y coord of clutter measurements
-if(~isempty(zTrue))
-    plot(k, zTrue(2,:), 'ok');
-end
+% if(~isempty(zTrue))
+%     plot(k, zTrue(2,:), 'ok');
+% end
 if(~isempty(X_k))
-    plot(k, X_k(2,:), 'om');
+    plot(k, X_k(2,1), '.r');
+    plot(k, X_k(2,2), '.b');
+    plot(k, X_k(2,3), '.g');
 end
+% legend('noise','y1','y2','y3');
 
-%OSPA error metric plot
-if(CALCULATE_OSPA_METRIC == 1)
-    figure(3);
-    clf;
+%% error
+
+if(k>=3)
+    figure (3)
     hold on;
-    plot(metric_history, 'x-b');
-
-    axis([0 100 0 cutoff_c]);
-    xlabel('Simulation step');
-    ylabel('OSPA error metric (higher is worse)');
-    title('OSPA error metric for this test');
+    axis([0 DATA_SIZE 0 10]);
+    xlim([0 DATA_SIZE]);
+    ylim([0 10]);
+    xlabel('Time step (n)');
+    ylabel('Avg Error (pixel/drone)');
+    title('Error over Time');
+    
+    total_error = 0;
+    for n = 1:NUM_DRONES
+        total_error = total_error + sqrt(power(floor((zTrue(1,n)) - floor(X_k(1,n))),2) + power(floor((zTrue(2,n)) - floor(X_k(2,n))),2));
+    end
+    
+    avg_error = total_error / NUM_DRONES;
+    
+    errorHistory = [errorHistory avg_error];
+    plot(errorHistory, 'r');
 end
+    
+%% get RMSE
+if(k==DATA_SIZE)
+    xerrorArray = (X_k_history(1,1:end) - zTrueHistory(1,NUM_DRONES+1:end)).^2;
+    yerrorArray = (X_k_history(2,1:end) - zTrueHistory(2,NUM_DRONES+1:end)).^2;
+    xerrorRMSE = sqrt(sum(xerrorArray,2) / (DATA_SIZE * NUM_DRONES));
+    yerrorRMSE = sqrt(sum(yerrorArray,2) / (DATA_SIZE * NUM_DRONES));
+    RMSE = sqrt(xerrorRMSE^2 + yerrorRMSE^2)
+end
+    
+
+

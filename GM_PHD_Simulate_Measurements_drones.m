@@ -17,10 +17,18 @@ s = sprintf('Step Sim: Simulating measurements.');
 disp(s);
 
 %Simulate target movement
-simTarget1State = F * simTarget1State;
-simTarget2State = F * simTarget2State;
-simTarget3State = F * simTarget3State;
-
+if k > 1
+   simTarget1Vel = [(pos_array(1).x(k)-pos_array(1).x(k-1))/dt; (pos_array(1).y(k)-pos_array(1).y(k-1))/dt];
+   simTarget2Vel = [(pos_array(2).x(k)-pos_array(2).x(k-1))/dt; (pos_array(2).y(k)-pos_array(2).y(k-1))/dt];
+   simTarget3Vel = [(pos_array(3).x(k)-pos_array(3).x(k-1))/dt; (pos_array(3).y(k)-pos_array(3).y(k-1))/dt];   
+else
+    simTarget1Vel = [0;0];
+    simTarget2Vel = [0;0];
+    simTarget3Vel = [0;0];
+end
+simTarget1State = [pos_array(1).x(k); pos_array(1).y(k); simTarget1Vel]; 
+simTarget2State = [pos_array(2).x(k); pos_array(2).y(k); simTarget2Vel]; 
+simTarget3State = [pos_array(3).x(k); pos_array(3).y(k); simTarget3Vel]; 
 
 %Save target movement for plotting
 simTarget1History = [simTarget1History, simTarget1State];
@@ -36,6 +44,18 @@ for i = 1:nClutter
     clutter(1,i) = clutterX;
     clutter(2,i) = clutterY;
 end
+
+%Generate true measurement without noise
+measX1 = simTarget1State(1);
+measY1 = simTarget1State(2);
+measX2 = simTarget2State(1);
+measY2 = simTarget2State(2);
+measX3 = simTarget3State(1);
+measY3 = simTarget3State(2);
+Z = [ [measX1 measX2 measX3]; [measY1 measY2 measY3] ];
+
+zTrue = Z;%Store for plotting
+
 
 %We are not guaranteed to detect the target - there is only a probability
 
@@ -58,18 +78,33 @@ else
     measY2 = simTarget2State(2) + sigma_r * randn * noiseScaler;
 end
 
-if(detect3 <= prob_detection)
+if(detect3 > prob_detection)
+    measX3 = [];
+    measY3 = [];
+else
     measX3 = simTarget3State(1) + sigma_r * randn * noiseScaler;
     measY3 = simTarget3State(2) + sigma_r * randn * noiseScaler;
-
 end
 
-%Generate true measurement
+
+%Generate measurement
 Z = [ [measX1 measX2 measX3]; [measY1 measY2 measY3] ];
-zTrue = Z;%Store for plotting
+
+
+%% drop measurements
+% if ( rem(k,30) == 0 )
+%     measX1 = [];
+%     measY1 = [];
+% end
+%%
+
+%Generate  measurement
+Z = [ [measX1 measX2 measX3]; [measY1 measY2 measY3] ];
+
 
 %Append clutter
 Z = [Z, clutter];
+zTrueHistory = [zTrueHistory, zTrue];
 
 %Store history
 simMeasurementHistory{k} =  Z;

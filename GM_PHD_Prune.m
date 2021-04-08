@@ -1,3 +1,4 @@
+
 %GM_PHD_Prune
 %Matlab code by Bryan Clarke b.clarke@acfr.usyd.edu.au 
 
@@ -8,6 +9,8 @@
 %GM_PHD_Initialisation.
 s = sprintf('Step 5: Prune and merge targets.');
 disp(s);
+
+
 
 %% Prune out the low-weight targets
 I = find(w_k >= T);%Find targets with high enough weights
@@ -22,6 +25,17 @@ l = 0;%Counts number of features
 w_bar_k = [];
 m_bar_k = [];
 P_bar_k = [];
+indexOrder = [];
+
+Z;
+w_k
+m_k
+
+
+ if k>= 25
+        stopHere = 0;
+    end
+
 while isempty(I) == false %We delete from I as we merge
     l = l + 1;
     %Find j, which is i corresponding to highest w_k for all i in I
@@ -45,11 +59,12 @@ while isempty(I) == false %We delete from I as we merge
             L = [L, thisI];
         end
     end
-    if(VERBOSE == 1)
-        s = sprintf('\tMerging target %d with these targets:', j);
-        disp(s);
-        disp(L);
-    end
+    
+    
+    s = sprintf('\tMerging target %d with these targets:', j);
+    disp(s);
+    disp(L);
+    
     %The new weight is the sum of the old weights
     w_bar_k_l = sum(w_k(L));
     
@@ -73,6 +88,10 @@ while isempty(I) == false %We delete from I as we merge
     
     old_P_range = calculateDataRange4(j);
     oldP = P_k(:,old_P_range);
+    
+    %save order list to resort
+    [val, nonDuplicatedIndex] = max( w_k(L) );
+    indexOrder = [indexOrder L(nonDuplicatedIndex)]; 
 
     %Now delete the elements in L from I
     for i = 1:length(L)
@@ -84,9 +103,61 @@ while isempty(I) == false %We delete from I as we merge
     w_bar_k = [w_bar_k, w_bar_k_l];
     m_bar_k = [m_bar_k, m_bar_k_l];
     P_bar_k = [P_bar_k, P_bar_k_l];
+    
+    
 end
 
-numTargets_J_pruned = size(w_bar_k,2);%The number of targets after pruning
+indexOrder
+%% sort out mixed association
+if ( k>=1 )
+    
+    %bring down to index order
+    newIndex = rem(indexOrder,numTargets_Jk_k_minus_1);
+    
+    %change remainder for 0 index
+    for i = 1:length(newIndex)
+        if ( newIndex(i) == 0 )
+            newIndex(i) = NUM_DRONES;
+        end
+    end
+    %change remainder for rem bigger than NUMDRONES but less than numTarg
+    for i = 1:length(newIndex)
+        if ( newIndex(i) > NUM_DRONES )
+            newIndex(i) = rem(newIndex(i),NUM_DRONES);
+        end
+    end
+    
+    
+    
+    %resort
+    for i = 1:length(newIndex) %in case missed detection
+        if i > NUM_DRONES %length(Z) %in case len(newIndex)=4 and len(Z)=4, dont want to overwrite good with low prob noise 
+            %len(newIndex)=6 and len(Z)=2, dont want to write more than we
+            %have to
+            continue;
+        end
+        
+        %add non duplicate index writer (i.e 3 2 2 1 --> 3 2 1)
+        % CHANGE HERE
+        
+        
+        sortedIndex = newIndex(i);
+        w_bar_k_fixed(sortedIndex) = w_bar_k(i);
+        m_bar_k_fixed(:,sortedIndex) = m_bar_k(:,i);
+        
+        index4 = calculateDataRange4(sortedIndex);
+        index4_old = calculateDataRange4(i);
+        
+        P_bar_k_fixed(:,index4) = P_bar_k(:,index4_old);
+        
+    end  
+end
+
+
+%%
+
+
+numTargets_J_pruned = size(w_bar_k_fixed,2);%The number of targets after pruning
 
 %Here you could do some check to see if numTargets_J_pruned > maxGaussiansJ
 %and if needed delete some of the weaker gaussians. I haven't bothered but
@@ -94,6 +165,12 @@ numTargets_J_pruned = size(w_bar_k,2);%The number of targets after pruning
 
 numTargets_Jk_minus_1 = numTargets_J_pruned;%Number of targets in total, passed into the next filter iteration
 %Store the weights, means and covariances for use next iteration.
-wk_minus_1 = w_bar_k; %Weights from this iteration
-mk_minus_1 = m_bar_k; %Means from this iteration
-Pk_minus_1 = P_bar_k; %Covariances from this iteration
+% wk_minus_1 = w_bar_k; %Weights from this iteration
+% mk_minus_1 = m_bar_k; %Means from this iteration
+% Pk_minus_1 = P_bar_k; %Covariances from this iteration
+
+%moved to updating after Estimate b/c good for using stored data if dropped
+%estimate
+% wk_minus_1 = w_bar_k_fixed; %Weights from this iteration
+% mk_minus_1 = m_bar_k_fixed %Means from this iteration
+% Pk_minus_1 = P_bar_k_fixed; %Covariances from this iteration

@@ -12,7 +12,7 @@ disp(s);
 w_k = zeros(1, numTargets_Jk_k_minus_1 * size(Z, 2) + numTargets_Jk_k_minus_1);
 m_k = zeros(4, numTargets_Jk_k_minus_1 * size(Z, 2) + numTargets_Jk_k_minus_1);
 P_k =  zeros(size(Pk_k_minus_1,1), size(Pk_k_minus_1,1) * (numTargets_Jk_k_minus_1 * size(Z, 2) + numTargets_Jk_k_minus_1));
-score_k = zeros(1, numTargets_Kk_k_minus_1 * size(Z,2) + numTargets_Kk_k_minus_1);
+score_k = zeros(1, numTargets_Jk_k_minus_1 * size(Z,2) + numTargets_Jk_k_minus_1);
 %First we assume that we failed to detect all targets.
 %We scale all weights by probability of missed detection
 %We already did the prediction step for these so their position &
@@ -77,20 +77,7 @@ for zi = 1:size(Z,2)
         P_new = P_k_k(:,old_P_range);
         P_k(:,new_P_range) = P_new;
         
-        if(VERBOSE == 1)
-            s1 = sprintf('Observation: %3.4f %3.4f %3.4f %3.4f', thisZ(1), thisZ(2), thisZ(3), thisZ(4));
-            disp(s1);
-            thisEta = eta(:,j);
-            s2 = sprintf('Expected Obs: %3.4f %3.4f %3.4f %3.4f', thisEta(1), thisEta(2), thisEta(3), thisEta(4));
-            disp(s2);
 
-            s1 = sprintf('Before Update: %3.4f %3.4f %3.4f %3.4f %3.4f %3.4f', m_k(1), m_k(2), m_k(3), m_k(4));
-            s2 = sprintf('After Update: %3.4f %3.4f %3.4f %3.4f', m_new(1), m_new(2), m_new(3), m_new(4));
-            s3 = sprintf('True State: %3.4f %3.4f %3.4f %3.4f', simTarget1State(1), simTarget1State(2), simTarget1Vel(1), simTarget1Vel(2));
-            disp(s1);
-            disp(s2);
-            disp(s3);
-        end
 
     end
 
@@ -101,11 +88,7 @@ for zi = 1:size(Z,2)
         weight_tally = weight_tally + w_k(thisIndex);
     end
     
-    %Recalculate weights
-    if(VERBOSE == 1)
-        s = sprintf('Calculating new weights for observation %d', zi);
-        disp(s);
-    end
+
     for j = 1:numTargets_Jk_k_minus_1
         old_weight = w_k(L * numTargets_Jk_k_minus_1 + j);
         measZ = [Z(1,zi), Z(2,zi)];
@@ -123,11 +106,7 @@ for zi = 1:size(Z,2)
 end
 numTargets_Jk = L * numTargets_Jk_k_minus_1 + numTargets_Jk_k_minus_1;
 
-if(VERBOSE == 1)
-    for j = 1:numTargets_Jk
-        thisPos = m_k(:,j);
-        thisW = w_k(j);
-        s = sprintf('Target %d: %3.4f %3.4f %3.4f %3.4f, Weight %3.9f', j, thisPos(1), thisPos(2), thisPos(3), thisPos(4), thisW);
-        disp(s);
-    end
-end
+s= sprintf('\t Jk_targets: %d , Jk_k-1: %d  ',numTargets_Jk, numTargets_Jk_k_minus_1);
+disp(s);
+
+

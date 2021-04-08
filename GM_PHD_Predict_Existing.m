@@ -28,16 +28,12 @@ for j = 1:size(mk_minus_1,2)
     end
 end
 
+
 %% Now we combine the birthed targets with the existing ones.
 %Append newly birthed targets (in m_k_minus_1) to back of old ones
-wk_k_minus_1 = [wk_minus_1, w_birth, w_spawn];
-mk_k_minus_1 = [mk_minus_1, m_birth, m_spawn];
-Pk_k_minus_1 = [Pk_minus_1, P_birth, P_spawn];
-numTargets_Jk_k_minus_1 = numTargets_Jk_minus_1 + numBirthedTargets + numSpawnedTargets; 
+wk_k_minus_1 = [wk_minus_1, w_birth ];
+mk_k_minus_1 = [mk_minus_1, m_birth ];
+Pk_k_minus_1 = [Pk_minus_1, P_birth ];
+numTargets_Jk_k_minus_1 = numTargets_Jk_minus_1 + numBirthedTargets ; 
 %Create a backup to allow for augmenting the measurement in the update
 mk_k_minus_1_before_prediction = [mk_k_minus_1_before_prediction, m_birth_before_prediction];%m_birth_before_prediction also contains the spawned targets before prediction
-
-if(VERBOSE == 1)
-    s = sprintf('\tPerformed prediction for %d birthed and existing targets in total.', numTargets_Jk_k_minus_1);
-    disp(s);
-end
