@@ -6,13 +6,51 @@
 %If you want to use this GM-PHD filter for your own problem, you will need
 %to replace a lot of this script with your own code.
 
-%% Read Rosbag and fill in PX, PY
-measure_bag = rosbag("jpdaf_track_corrected_2021-02-11-18-08-33.bag");
-pos_bag = select(measure_bag, 'Topic', "/hummingbird1/track/bounding_box");
-pos_array = read_array_pos(pos_bag);
+if(USE_REAL_DATA)
+    %% Read Rosbag and fill in PX, PY
+    real_bag = rosbag("/home/marklee/rosbag/maxim_glass_tracking.bag");
+    bbox_bag = select(real_bag, 'Topic', "/darknet_ros/bounding_boxes");
+    glass_bag = select(real_bag, 'Topic', "/vicon/TobiiGlasses/odom");
+    drone1_bag = select(real_bag, 'Topic', "/vicon/DragonFly1/odom");
+    
+    %get bbox topic
+    [real_pos_array_original] = read_bbox_pos(bbox_bag, DOWN_SAMPLE);
+    
+    real_pos_array = real_pos_array_original(1:3,1:1000);
+    DATA_SIZE = size(real_pos_array,2);
+    
+    %get odom glass topic
+%     odom_posStructs = readMessages(glass_bag,'DataFormat','struct');
+    [vicon_glass_pos] = read_odom_pos(glass_bag, DOWN_SAMPLE);
+    
+    
+    
+    
+    
+    
+    
+else
+    %% Read Rosbag and fill in PX, PY
+    measure_bag = rosbag("jpdaf_track_corrected_2021-02-11-18-08-33.bag");
+    pos_bag = select(measure_bag, 'Topic', "/hummingbird1/track/bounding_box");
+    pos_array = read_array_pos(pos_bag, DOWN_SAMPLE);
+    
+    DATA_SIZE = size(pos_array(1).x, 1)-20;
+    
+end
 
-
-
+if(USE_REAL_DATA)
+    % fill empty real data with 0
+    for n = 1:NUM_DRONES
+        for t = 1:DATA_SIZE
+            
+            if isempty(real_pos_array(n,t).x | real_pos_array(n,t).y)
+                real_pos_array(n,t).x = 0;
+                real_pos_array(n,t).y = 0;
+            end
+        end
+    end
+end
 
 %% Control Variables
 %These variables control some aspect of filter function and performance
@@ -22,8 +60,6 @@ PLOT_ALL_MEASUREMENTS = 0;%Set to 1 to maintain the plot of the full measurement
 
 CALCULATE_OSPA_METRIC = 0; %Set to 1 to calculate the OSPA performance metric for each step. This is not essential for the GM-PHD filter but provides a rough indication of how well the filter is performing at any given timestep.
 USE_EKF = 0;%Set to 1 to use extended Kalman filter. Set to 0 to use linear KF.
-USE_REAL_DATA = 0;
-DATA_SIZE = size(pos_array(1).x, 1)-20;
 
 
 %Target initialisation: when we add a new target, we can use a two-step
@@ -98,7 +134,7 @@ numTargets_Jk_minus_1 = 0; %Number of targets, previous. J_k-1. Set in end of GM
 %These particular values come from Vo&Ma
 T = 10^-5;%Weight threshold. Value the weight needs to be above to be considered a target rather than be deleted immediately.
 mergeThresholdU = 5;%1; %Merge threshold. Points with Mahalanobis distance of less than this between them will be merged.
-weightThresholdToBeExtracted = 0.5;%Value the weight needs to be above to be considered a 'real' target.
+weightThresholdToBeExtracted = 0.35;%Value the weight needs to be above to be considered a 'real' target.
 maxGaussiansJ = 100;%Maximum number of Gaussians after pruning. NOT USED in this implementation.
 
 %The previous iteration's mean/weight/covariance. Set in GM_PHD_Prune
@@ -153,9 +189,17 @@ Q = sigma_v^2 * [ [1/4*dt^4*I2, 1/2*dt^3*I2]; [1/2*dt^3* I2, dt^2*I2] ]; %Proces
 %and it is not specified by Vo&Ma whether they are used (I am fairly sure
 %they aren't, or they would have said otherwise)
 %Birth and spawn models
-birth_mean1 = [pos_array(1).x(1), pos_array(1).y(1), 0, 0]';%Used in birth_intensity function
-birth_mean2 = [pos_array(2).x(1), pos_array(2).y(1), 0, 0]';%Used in birth_intensity function
-birth_mean3 = [pos_array(3).x(1), pos_array(3).y(1), 0, 0]';%Used in birth_intensity function
+if(USE_REAL_DATA)
+    birth_mean1 = [real_pos_array(1,1).x, real_pos_array(1,1).y, 0, 0]';%Used in birth_intensity function
+    birth_mean2 = [real_pos_array(2,1).x, real_pos_array(2,1).y, 0, 0]';%Used in birth_intensity function
+    birth_mean3 = [real_pos_array(3,1).x, real_pos_array(3,1).y, 0, 0]';%Used in birth_intensity function
+    
+else
+    birth_mean1 = [pos_array(1).x(1), pos_array(1).y(1), 0, 0]';%Used in birth_intensity function
+    birth_mean2 = [pos_array(2).x(1), pos_array(2).y(1), 0, 0]';%Used in birth_intensity function
+    birth_mean3 = [pos_array(3).x(1), pos_array(3).y(1), 0, 0]';%Used in birth_intensity function
+    
+end
 
 covariance_birth = diag([10, 10, 5, 5]');%Used in birth_intensity function
 covariance_spawn = diag([10, 10, 5, 5]');%Used in spawn_intensity function
@@ -177,9 +221,7 @@ if(USE_EKF == 0)
 end
 
 %% read bag pos data 1,2,3
-function pos_array = read_array_pos(array)
-
-DOWN_SAMPLE = 3;
+function pos_array = read_array_pos(array, DOWN_SAMPLE)
 
 robot_posStructs = readMessages(array,'DataFormat','struct');
 x = cellfun(@(m) double(m.Poses(1).Position.X),robot_posStructs);
@@ -210,4 +252,55 @@ pos_array3.z = z3(1:DOWN_SAMPLE:end); %z3;
 pos_array3.time = odom_time3;
 
 pos_array = [pos_arrayOne pos_arrayTwo pos_array3];
+end
+
+
+
+%% read bbox to get pos data 1,2,3
+function [pos_array] = read_bbox_pos(array, DOWN_SAMPLE)
+
+robot_bboxStructs = readMessages(array,'DataFormat','struct');
+tLength = size(robot_bboxStructs);
+
+
+for t = 1:DOWN_SAMPLE:tLength
+    [~, numberDetected] = size(robot_bboxStructs{t}.BoundingBoxes);
+
+    for n = 1:numberDetected
+%         x_n = cellfun(@(m) double((m(t).BoundingBoxes(n).Xmin +  m(t).BoundingBoxes(n).Xmax)/2), robot_bboxStructs) ;
+%         y_n = cellfun(@(m) double((m(t).BoundingBoxes(n).Ymin +  m(t).BoundingBoxes(n).Ymax)/2), robot_bboxStructs) ;
+%         
+        x_n = double(robot_bboxStructs{t}.BoundingBoxes(n).Xmin + robot_bboxStructs{t}.BoundingBoxes(n).Xmax)/2;
+        y_n = double(robot_bboxStructs{t}.BoundingBoxes(n).Ymin + robot_bboxStructs{t}.BoundingBoxes(n).Ymax)/2;
+        time = double( double(robot_bboxStructs{t}.Header.Stamp.Sec)+double(robot_bboxStructs{t}.Header.Stamp.Nsec)*10e-10 ) ;
+
+        
+        poseArray(n,t).x = x_n;
+        poseArray(n,t).y = y_n;
+        poseArray(n,t).time = time;
+    end
+        
+end
+pos_array = poseArray;
+
+end
+
+%% read bag pose data
+function pos_array = read_odom_pos(array, DOWN_SAMPLE)
+
+odom_posStructs = readMessages(array,'DataFormat','struct');
+x = cellfun(@(m) double(m.Pose.Pose.Position.X),odom_posStructs);
+y = cellfun(@(m) double(m.Pose.Pose.Position.Y),odom_posStructs);
+z = cellfun(@(m) double(m.Pose.Pose.Position.Z),odom_posStructs);
+time = cellfun(@(m) double(double(m.Header.Stamp.Sec)+double(m.Header.Stamp.Nsec)*10e-10),odom_posStructs);
+
+
+% pos_arrayOne.x = x(1:DOWN_SAMPLE:end); %x;
+% pos_arrayOne.y = y(1:DOWN_SAMPLE:end); %y;
+% pos_arrayOne.z = z(1:DOWN_SAMPLE:end); %z;
+% pos_arrayOne.time = odom_time;
+% 
+
+
+pos_array = [x y z time];
 end

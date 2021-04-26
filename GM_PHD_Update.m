@@ -35,10 +35,6 @@ end
 L = 0; 
 for zi = 1:size(Z,2)
     L = L + 1;%L is used to calculate an offset from previous updates. It maxes out at L = number_of_measurements. A more elegant solution would be to set L = zi but I retain this method for compatibility with Vo&Ma
-    if(VERBOSE == 1)
-        s = sprintf('Matching targets against measurement %d', zi);
-        disp(s);
-    end
     
     for j = 1:numTargets_Jk_k_minus_1
 
@@ -64,6 +60,8 @@ for zi = 1:size(Z,2)
         %reweight over. In my experience, reweighting over all four
         %produces unacceptably low weights most of the time, so we reweight
         %over 2D.
+        
+       
         w_new = prob_detection * wk_k_minus_1(j) * mvnpdf(thisZ(weightDataRange), eta(weightDataRange,j), S(weightDataRange,S_range(weightDataRange)));%Hoping normpdf is the function I need
         w_k(thisIndex) = w_new;
 

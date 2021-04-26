@@ -6,6 +6,12 @@ close all;
 clc;
 
 NUM_DRONES = 3;
+DOWN_SAMPLE = 2;
+
+USE_REAL_DATA = 0;
+MHT = 0;
+
+
 
 %Step 0: Initialisation
 %the linear KF is direct observations of target state, the EKF is
@@ -29,12 +35,20 @@ end
 
 %% Control parameters
 %prune step
-mergeThresholdU = 5;
+T = 10^-5;%Weight threshold. Value the weight needs to be above to be considered a target rather than be deleted immediately.
+mergeThresholdU = 1;
 %sim data noise
-noiseScaler = 0.0;       %Adjust the strength of the noise on the measurements by adjusting this. Useful for debugging.
+noiseScaler = 0;       %Adjust the strength of the noise on the measurements by adjusting this. Useful for debugging.
 %false positive
-nClutter = 0; %Assume constant 50 clutter measurements. Since clutter is Poisson distrbuted it might be more accurate to use nClutter = poissrnd(50) if you have the required Matlab toolbox. Constant 50 clutter works well enough for simulation purposes.
+nClutter = 10; %Assume constant 50 clutter measurements. Since clutter is Poisson distrbuted it might be more accurate to use nClutter = poissrnd(50) if you have the required Matlab toolbox. Constant 50 clutter works well enough for simulation purposes.
 %false negative
+prob_detection = 1; %Probability of target detection. Used in recalculating weights in GM_PHD_Update
+
+
+%% 
+if(MHT)
+   mergeThresholdU = 0; 
+end
 
 %Main loop
 while (k < endTime)%k = timestep
@@ -42,9 +56,7 @@ while (k < endTime)%k = timestep
     s = sprintf('======ITERATION %d======', k);
     disp(s);
     
-    if(k >= 25)
-        stophere = 0;
-    end
+
         
     %Step 0: Sim Generate sensor Measurements
     
@@ -61,7 +73,14 @@ while (k < endTime)%k = timestep
     
     
     %Step 5: Prune targets
-    GM_PHD_Prune;
+    if(MHT ==1)
+        GM_PHD_Prune_MHT;
+        
+    else
+        GM_PHD_Prune;
+        
+    end
+    
     %Step 6: Estimate position of targets
     GM_PHD_Estimate
     
@@ -71,13 +90,15 @@ while (k < endTime)%k = timestep
     
     GM_PHD_Create_Birth;
     
-    
     %Step Plot: Generate graphs
+    if(rem(k,1)==0)
+        GM_PHD_Simulate_Plot;
+    end
     
-    GM_PHD_Simulate_Plot;
-    
-
-
 
 end
+
+% zGM_PHD_evaluation_plot();
+
+
 

@@ -18,14 +18,17 @@ nClutter = 0; %Assume constant 50 clutter measurements. Since clutter is Poisson
 %I haven't included descriptions of every variable because their names are
 %fairly self-explanatory
 endTime = DATA_SIZE;%Duration of main loop
-simTarget1Start = [pos_array(1).x(1); pos_array(1).y(1); 0;0];
-simTarget2Start = [pos_array(2).x(1); pos_array(2).y(1); 0;0];
-simTarget3Start = [pos_array(3).x(1); pos_array(3).y(1); 0;0];
 
+if(USE_REAL_DATA)
+    simTarget1Start = [real_pos_array(1,1).x; real_pos_array(1,1).y; 0;0];
+    simTarget2Start = [real_pos_array(2,1).x; real_pos_array(2,1).y; 0;0];
+    simTarget3Start = [real_pos_array(3,1).x; real_pos_array(3,1).y; 0;0];
+else
+    simTarget1Start = [pos_array(1).x(1); pos_array(1).y(1); 0;0];
+    simTarget2Start = [pos_array(2).x(1); pos_array(2).y(1); 0;0];
+    simTarget3Start = [pos_array(3).x(1); pos_array(3).y(1); 0;0];
 
-simTarget1End = [pos_array(1).x(DATA_SIZE), pos_array(1).y(DATA_SIZE)];
-simTarget2End = [pos_array(2).x(DATA_SIZE), pos_array(2).y(DATA_SIZE)];
-simTarget3End = [pos_array(3).x(DATA_SIZE), pos_array(3).y(DATA_SIZE)];
+end
 
 simTarget1Vel = [0; 0];
 simTarget2Vel = [0; 0];
@@ -49,12 +52,13 @@ simTarget3SpawnTime = 0;%Target 3 is spawned from target 1 at t = 66s.
 figure(1);
 clf;
 hold on;
-axis([0 400 0 300]);
-xlim([0 400]);
-ylim([0 300]);
+axis([0 1000 0 1000]);
+xlim([0 1000]);
+ylim([0 1000]);
 
 errorHistory= [];
 zTrueHistory = [];
+maxError = 0;
 
 %X and Y measurements plot
 xlabel('X image');
@@ -62,17 +66,23 @@ ylabel('Y image');
 title('Detected targets and measurements');
 axis square;
 
+axismax = 300;
+if(USE_REAL_DATA)
+    axismax = 1000;
+
+end
+
 figure(2);
 subplot(2,1,1);
 hold on;
-axis([0 DATA_SIZE 0 400]);
+axis([0 DATA_SIZE 0 axismax]);
 xlabel('Simulation step');
-ylabel('X position of measurement (m)');
-title('Measurement X coordinates');
+ylabel('X measured (pixel)');
+title('Measured X ');
 subplot(2,1,2);
 hold on;
-axis([0 DATA_SIZE 0 300]);
+axis([0 DATA_SIZE 0 axismax]);
 xlabel('Simulation step');
-ylabel('Y position of measurement (m)');
-title('Measurement Y coordinates');
+ylabel('Y measured (pixel)');
+title('Measured Y ');
 

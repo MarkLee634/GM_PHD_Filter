@@ -118,8 +118,14 @@ P_spawn = [];%New spawns' covariances
 
 %Step Sim: Generate simulated measurements
 %Detected clutter is a Poisson RFS
-xrange = [-1000 1000];%X range of measurements
-yrange = [-1000 1000];%Y range of measurements
+if(USE_REAL_DATA)
+    xrange = [-1000 1000];%X range of measurements
+    yrange = [-1000 1000];%Y range of measurements
+else
+    xrange = [0 400];%X range of measurements
+    yrange = [0 400];%Y range of measurements
+end
+
 V = 4 * 10^6; %Volume of surveillance region
 lambda_c = 12.5 * 10^-6; %average clutter returns per unit volume (50 clutter returns over the region)
 clutter_intensity = @(z_cartesian) lambda_c * V * unifpdf_2d(xrange, yrange, z_cartesian);%Generate clutter function. There are caveats to its use for clutter outside of xrange or yrange - see the comments in unifpdf_2d.m
@@ -157,7 +163,7 @@ covariance_spawn = max(covariance_spawn, 10^-6);%Used in spawn_intensity functio
 birth_intensity = @(x) (0.1 * mvnpdf(x(1:2)', birth_mean1(1:2)', covariance_birth(1:2,1:2)) + 0.1 * mvnpdf(x(1:2)', birth_mean2(1:2)', covariance_birth(1:2,1:2)));%Generate birth weight. This only takes into account the position, not the velocity, as Vo&Ma don't say if they use velocity and I assume that they don't. Taken from page 8 of their paper.
 spawn_intensity = @(x, targetState) 0.05 * mvnpdf(x, targetState, covariance_spawn);%Spawn weight, from page 8 of Vo&Ma. 
 
-prob_detection = 0.98; %Probability of target detection. Used in recalculating weights in GM_PHD_Update
+prob_detection = 1; %Probability of target detection. Used in recalculating weights in GM_PHD_Update
 
 %Detection models for the linear Kalman filter. The extended Kalman filter
 %uses different models.

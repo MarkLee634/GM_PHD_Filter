@@ -16,6 +16,15 @@
 s = sprintf('Step Sim: Simulating measurements.');
 disp(s);
 
+if(USE_REAL_DATA)
+    pos_array(1).x(k) = real_pos_array(1,k).x;
+    pos_array(2).x(k) = real_pos_array(2,k).x;
+    pos_array(3).x(k) = real_pos_array(3,k).x;
+    
+    pos_array(1).y(k) = real_pos_array(1,k).y;
+    pos_array(2).y(k) = real_pos_array(2,k).y;
+    pos_array(3).y(k) = real_pos_array(3,k).y;
+end
 %Simulate target movement
 if k > 1
    simTarget1Vel = [(pos_array(1).x(k)-pos_array(1).x(k-1))/dt; (pos_array(1).y(k)-pos_array(1).y(k-1))/dt];

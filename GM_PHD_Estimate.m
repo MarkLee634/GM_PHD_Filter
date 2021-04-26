@@ -88,5 +88,5 @@ X_k_P = abs(X_k_P);
 Pk_minus_1 = abs(Pk_minus_1);
 
 %Store history for plotting.
-X_k
+X_k;
 X_k_history = [X_k_history, X_k];

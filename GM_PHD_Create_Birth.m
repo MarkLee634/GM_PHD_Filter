@@ -49,7 +49,8 @@ if(k >= 2)%If we want to add targets with initial velocities.If only one iterati
         m_this = thisMeas(:,j_this);
 %         m_prev = prevMeas(:, j_this);
         
-        birthWeight = birth_intensity(m_this);
+%         birthWeight = birth_intensity(m_thi1s);
+        birthWeight = 1e-5;    
         w_i = birthWeight;
         %Initialise the covariance
         P_i = covariance_birth;

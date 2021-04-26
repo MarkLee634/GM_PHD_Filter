@@ -11,7 +11,6 @@ s = sprintf('Step 5: Prune and merge targets.');
 disp(s);
 
 
-
 %% Prune out the low-weight targets
 I = find(w_k >= T);%Find targets with high enough weights
 if(VERBOSE == 1)
@@ -19,6 +18,9 @@ if(VERBOSE == 1)
     disp(s);
     disp(I);
 end
+
+ICopy = [];
+ICopy = I;
 
 %% Merge the close-together targets
 l = 0;%Counts number of features
@@ -31,16 +33,26 @@ Z;
 w_k;
 m_k;
 
+if k >= 115
+    stopHere = 0;
+end
 
 while isempty(I) == false %We delete from I as we merge
     l = l + 1;
     %Find j, which is i corresponding to highest w_k for all i in I
-    highWeights = w_k(:,I);
+    if isempty(ICopy)
+        break;
+    end
+    
+    if l >=4
+       break; 
+    end
+    highWeights = w_k(ICopy);
     [maxW, j] = max(highWeights);
     j = j(1); %In case of two targets with equal weight
     %j is an index of highWeights (i.e. a position in I)
     %We want the index in w_k
-    j = I(j);
+    j = ICopy(j);
     
     %Find all points with Mahalanobis distance less than U from point
     %m_k(j)
@@ -48,11 +60,18 @@ while isempty(I) == false %We delete from I as we merge
     for iterateI = 1:length(I)
         thisI = I(iterateI);
 
-        delta_m = m_k(:,thisI) - m_k(:,j);
-        P_range = calculateDataRange4(thisI); 
-        mahal_dist = delta_m' * (P_k(:,P_range) \ delta_m);%Invert covariance via left division
+%                 delta_m = m_k(:,thisI) - m_k(:,j); %use all of state
+        %         include pos&vel
+        delta_m = m_k(1:2,thisI) - m_k(1:2,j);
+        P_range = calculateDataRange2(thisI);
+        mahal_dist = delta_m' * (P_k(1:2,P_range) \ delta_m);%Invert covariance via left division
         if(mahal_dist <= mergeThresholdU)
             L = [L, thisI];
+            
+            %see if other weighted sum is used for distance 
+            if (thisI - j ~= 0)
+                weightedSumHere = 0;
+            end
         end
     end
     
@@ -86,14 +105,28 @@ while isempty(I) == false %We delete from I as we merge
     oldP = P_k(:,old_P_range);
     
     %save order list to resort
-    [val, nonDuplicatedIndex] = max( w_k(L) );
-    indexOrder = [indexOrder L(nonDuplicatedIndex)]; 
+%     [val, nonDuplicatedIndex] = max( w_k(L) );
+    nonDuplicatedIndex = j;
+    indexOrder = [indexOrder nonDuplicatedIndex]; 
 
     %Now delete the elements in L from I
     for i = 1:length(L)
         iToRemove = find(I == L(i));
         I(iToRemove) = [];
     end
+    
+    %delete every Nth of ICopy
+    drone_index_to_delete = rem(j,numTargets_Jk_k_minus_1);
+    for i = 1:length(ICopy)
+        if rem(ICopy(i),numTargets_Jk_k_minus_1) == drone_index_to_delete
+            ICopy(i) = 0;
+        end
+    end
+    
+    ICopy = nonzeros(ICopy)';
+    
+    
+    
     
     %Append the new values to the lists
     w_bar_k = [w_bar_k, w_bar_k_l];
@@ -133,8 +166,7 @@ if ( k>=1 )
             continue;
         end
         
-        %add non duplicate index writer (i.e 3 2 2 1 --> 3 2 1)
-        % CHANGE HERE
+ 
         
         
         sortedIndex = newIndex(i);
