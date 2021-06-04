@@ -27,26 +27,36 @@ m_bar_k = [];
 P_bar_k = [];
 indexOrder = [];
 
+ICopy = I;
 Z;
 w_k;
 m_k;
 
+if k >= 92
+    stophere = 0;
+end
 
-while isempty(I) == false %We delete from I as we merge
+while isempty(ICopy) == false %We delete from I as we merge
+    
+    
     l = l + 1;
+    if(l > NUM_DRONES) %only care about updating the state values
+       break; 
+    end
+    
     %Find j, which is i corresponding to highest w_k for all i in I
-    highWeights = w_k(:,I);
+    highWeights = w_k(:,ICopy);
     [maxW, j] = max(highWeights);
     j = j(1); %In case of two targets with equal weight
     %j is an index of highWeights (i.e. a position in I)
     %We want the index in w_k
-    j = I(j);
+    j = ICopy(j);
     
     %Find all points with Mahalanobis distance less than U from point
     %m_k(j)
     L = [];%A vector of indexes of w_k
-    for iterateI = 1:length(I)
-        thisI = I(iterateI);
+    for iterateI = 1:length(ICopy)
+        thisI = ICopy(iterateI);
 
         delta_m = m_k(:,thisI) - m_k(:,j);
         P_range = calculateDataRange4(thisI); 
@@ -86,14 +96,24 @@ while isempty(I) == false %We delete from I as we merge
     oldP = P_k(:,old_P_range);
     
     %save order list to resort
-    [val, nonDuplicatedIndex] = max( w_k(L) );
-    indexOrder = [indexOrder L(nonDuplicatedIndex)]; 
+    indexOrder = [indexOrder j]; 
 
-    %Now delete the elements in L from I
-    for i = 1:length(L)
-        iToRemove = find(I == L(i));
-        I(iToRemove) = [];
+%     %Now delete the elements in L from I
+%     for i = 1:length(L)
+%         iToRemove = find(I == L(i));
+%         I(iToRemove) = [];
+%     end
+    
+    %find index of highest weight, and remove from search space
+    searchIndex = rem(j,numTargets_Jk_k_minus_1);
+    for i = 1:length(ICopy)
+       if( rem(ICopy(i), numTargets_Jk_k_minus_1) == searchIndex ) 
+           ICopy(i) = 0;
+       end
     end
+    
+    %remove all 0 value index
+    ICopy = nonzeros(ICopy)';
     
     %Append the new values to the lists
     w_bar_k = [w_bar_k, w_bar_k_l];

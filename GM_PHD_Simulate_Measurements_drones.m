@@ -109,6 +109,9 @@ Z = [ [measX1 measX2 measX3]; [measY1 measY2 measY3] ];
 
 %Generate  measurement
 Z = [ [measX1 measX2 measX3]; [measY1 measY2 measY3] ];
+% if (~all(Z, 'all'))
+%     stopHere = 0;
+% end
 
 
 %Append clutter

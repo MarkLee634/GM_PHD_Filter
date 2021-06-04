@@ -7,9 +7,30 @@ disp(s);
 
 mk_k_minus_1_before_prediction = mk_minus_1;
 
+
+
+%create B matrix for rotation velocity
+for i = 1: size(mk_minus_1,2)
+    x = (mk_minus_1(1,i) );
+    y = (mk_minus_1(2,i) );
+    bcol(1,:) = [ (x-cx)*(y-cy)/f, -(x-cx)^2/f-f, y-cy ];
+    bcol(2,:) = [ f+((y-cy)^2)/f,  -(x-cx)*(y-cy)/f , -x+cx];
+    bcol(3,:) = [0 0 0 ];
+    bcol(4,:) = [0 0 0 ];
+    
+    B = [B, bcol];
+end
+
+u = [0 0 0]'; %no imu testing here
+
 for j = 1:size(mk_minus_1,2)
     wk_minus_1(j) = prob_survival * wk_minus_1(j);
-    mk_minus_1(:,j) = F * mk_minus_1(:,j); %Assume constant velocity.
+    %mk_minus_1(:,j) = F * mk_minus_1(:,j); %without rotation velocity.
+    
+    %include rotation velocity (imu reading) as well
+    % X_k+1 = A*X_k + B*u  
+    index = (i-1)*3 +1;
+    mk_minus_1(:,j) = F * mk_minus_1(:,j) + B(:,index:index+2)*u;
 
     P_range = calculateDataRange4(j);
     P_i = Q + F * Pk_minus_1(:,P_range) * F';
@@ -19,13 +40,7 @@ for j = 1:size(mk_minus_1,2)
     
     Pk_minus_1(:,P_range) = P_i;
     
-    if(VERBOSE == 1)
-        s = sprintf('\t\tExisting target %d. Previously at %3.4f %3.4f, now at %3.4f %3.4f.', j, prevState(1), prevState(2), newState(1), newState(2));
-        disp(s);
 
-        s = sprintf('\t\tP was %3.4f %3.4f, NOW %3.4f %3.4f', Pk_minus_1(1,P_range(1)), Pk_minus_1(2,P_range(2)), P_i(1,1), P_i(2,2));
-        disp(s);
-    end
 end
 
 

@@ -14,8 +14,8 @@ P_k_k = [];
 
 for j = 1:numTargets_Jk_k_minus_1
     m_j = mk_k_minus_1(:,j);
-    eta_j = H2 * m_j;%Observation model. Assume we see position AND velocity of the target.
-
+    eta_j = H2 * m_j;
+    
     P_range = calculateDataRange4(j); %4x4 array
 
     PHt = Pk_k_minus_1(:,P_range) * H2'; %Taken from Tim Bailey's EKF code. 4x4 array

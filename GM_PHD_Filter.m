@@ -6,11 +6,13 @@ close all;
 clc;
 
 NUM_DRONES = 3;
-DOWN_SAMPLE = 2;
+DOWN_SAMPLE = 1;
+PLOT_DOWN_SAMPLE = 1;
 
 USE_REAL_DATA = 0;
 MHT = 0;
 
+rng('default')
 
 
 %Step 0: Initialisation
@@ -36,11 +38,11 @@ end
 %% Control parameters
 %prune step
 T = 10^-5;%Weight threshold. Value the weight needs to be above to be considered a target rather than be deleted immediately.
-mergeThresholdU = 1;
+mergeThresholdU = 0.00001; %1;
 %sim data noise
 noiseScaler = 0;       %Adjust the strength of the noise on the measurements by adjusting this. Useful for debugging.
 %false positive
-nClutter = 10; %Assume constant 50 clutter measurements. Since clutter is Poisson distrbuted it might be more accurate to use nClutter = poissrnd(50) if you have the required Matlab toolbox. Constant 50 clutter works well enough for simulation purposes.
+nClutter = 0; %Assume constant 50 clutter measurements. Since clutter is Poisson distrbuted it might be more accurate to use nClutter = poissrnd(50) if you have the required Matlab toolbox. Constant 50 clutter works well enough for simulation purposes.
 %false negative
 prob_detection = 1; %Probability of target detection. Used in recalculating weights in GM_PHD_Update
 
@@ -50,13 +52,14 @@ if(MHT)
    mergeThresholdU = 0; 
 end
 
+digits(3) %significant point
+
 %Main loop
 while (k < endTime)%k = timestep
     k = k + 1;
     s = sprintf('======ITERATION %d======', k);
     disp(s);
     
-
         
     %Step 0: Sim Generate sensor Measurements
     
@@ -64,8 +67,13 @@ while (k < endTime)%k = timestep
     
     %Step 1: Prediction for birthed/spawned targets
     GM_PHD_Predict_Birth;
+    
+    
     %Step 2: Prediction for existing targets
     GM_PHD_Predict_Existing;
+    
+    
+    
     %Step 3: Construction of PHD update components
     GM_PHD_Construct_Update_Components;
     %Step 4: Update targets with measurements
@@ -83,6 +91,7 @@ while (k < endTime)%k = timestep
     
     %Step 6: Estimate position of targets
     GM_PHD_Estimate
+
     
     %Step 7: Create birthed-targets-list to add next iteration in Step 1.
     %Not a formal part of Vo&Ma but an essential step!
@@ -91,7 +100,7 @@ while (k < endTime)%k = timestep
     GM_PHD_Create_Birth;
     
     %Step Plot: Generate graphs
-    if(rem(k,1)==0)
+    if(rem(k,PLOT_DOWN_SAMPLE)==0)
         GM_PHD_Simulate_Plot;
     end
     

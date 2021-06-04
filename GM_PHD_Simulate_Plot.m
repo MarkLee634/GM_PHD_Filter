@@ -65,10 +65,10 @@ figure(2);
 hold on
 subplot(2,1,1);
 
-plot(k, Z(1,:), 'xk');%X coord of clutter measurements
-% if(~isempty(zTrue))
-%     plot(k, zTrue(1,:), 'ok');
-% end
+% plot(k, Z(1,:), 'xk');%X coord of clutter measurements
+if(~isempty(zTrue))
+    plot(k, zTrue(1,:), 'xk');
+end
 if(~isempty(X_k))
     plot(k, X_k(1,1), '.r');
     plot(k, X_k(1,2), '.b');
@@ -77,10 +77,10 @@ end
 % legend(L, {'noise','x1','x2','x3'});
 
 subplot(2,1,2);
-plot(k, Z(2,:), 'xk');%Y coord of clutter measurements
-% if(~isempty(zTrue))
-%     plot(k, zTrue(2,:), 'ok');
-% end
+% plot(k, Z(2,:), 'xk');%Y coord of clutter measurements
+if(~isempty(zTrue))
+    plot(k, zTrue(2,:), 'xk');
+end
 if(~isempty(X_k))
     plot(k, X_k(2,1), '.r');
     plot(k, X_k(2,2), '.b');
@@ -89,28 +89,29 @@ end
 % legend('noise','y1','y2','y3');
 
 %% error
-
-if(k>=3)
-    figure (3)
-    hold on;
-    axis([0 DATA_SIZE 0 100]);
-    xlim([0 DATA_SIZE]);
-    ylim([0 100]);
-    xlabel('Time step (n)');
-    ylabel('Avg Error (pixel/drone)');
-    title('Error over Time');
-    
-    total_error = 0;
-    for n = 1:NUM_DRONES
-        total_error = total_error + sqrt(power(floor((zTrue(1,n)) - floor(X_k(1,n))),2) + power(floor((zTrue(2,n)) - floor(X_k(2,n))),2));
+if(~USE_REAL_DATA)
+    if(k>=3)
+        figure (3)
+        hold on;
+        axis([0 DATA_SIZE*DOWN_SAMPLE 0 100]);
+        xlim([0 DATA_SIZE*DOWN_SAMPLE]);
+        ylim([0 100]);
+        xlabel('Time step (n)');
+        ylabel('Avg Error (pixel/drone)');
+        title('Error over Time');
+        
+        total_error = 0;
+        for n = 1:NUM_DRONES
+            total_error = total_error + sqrt(power(floor((zTrue(1,n)) - floor(X_k(1,n))),2) + power(floor((zTrue(2,n)) - floor(X_k(2,n))),2));
+        end
+        
+        avg_error = total_error / NUM_DRONES;
+        
+        errorHistory = [errorHistory avg_error];
+        kHistory = [kHistory k*DOWN_SAMPLE];
+        plot(kHistory, errorHistory, 'r');
     end
-    
-    avg_error = total_error / NUM_DRONES;
-    
-    errorHistory = [errorHistory avg_error];
-    plot(errorHistory, 'r');
 end
-    
 % %% get RMSE
 % if(k==DATA_SIZE)
 %     xerrorArray = (X_k_history(1,1:end) - zTrueHistory(1,NUM_DRONES+1:end)).^2;

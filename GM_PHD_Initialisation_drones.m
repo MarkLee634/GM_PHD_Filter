@@ -13,6 +13,7 @@ if(USE_REAL_DATA)
     glass_bag = select(real_bag, 'Topic', "/vicon/TobiiGlasses/odom");
     drone1_bag = select(real_bag, 'Topic', "/vicon/DragonFly1/odom");
     
+    
     %get bbox topic
     [real_pos_array_original] = read_bbox_pos(bbox_bag, DOWN_SAMPLE);
     
@@ -31,8 +32,10 @@ if(USE_REAL_DATA)
     
 else
     %% Read Rosbag and fill in PX, PY
-    measure_bag = rosbag("jpdaf_track_corrected_2021-02-11-18-08-33.bag");
-    pos_bag = select(measure_bag, 'Topic', "/hummingbird1/track/bounding_box");
+    measure_bag = rosbag("../../rosbag/drone_2d_3drones_imu.bag");
+    pos_bag = select(measure_bag, 'Topic', "/hummingbird0/track/bounding_box");
+    imu_bag = select(measure_bag, 'Topic', "/hummingbird0/imu");
+
     pos_array = read_array_pos(pos_bag, DOWN_SAMPLE);
     
     DATA_SIZE = size(pos_array(1).x, 1)-20;
@@ -134,7 +137,7 @@ numTargets_Jk_minus_1 = 0; %Number of targets, previous. J_k-1. Set in end of GM
 %These particular values come from Vo&Ma
 T = 10^-5;%Weight threshold. Value the weight needs to be above to be considered a target rather than be deleted immediately.
 mergeThresholdU = 5;%1; %Merge threshold. Points with Mahalanobis distance of less than this between them will be merged.
-weightThresholdToBeExtracted = 0.35;%Value the weight needs to be above to be considered a 'real' target.
+weightThresholdToBeExtracted = 0.2;%Value the weight needs to be above to be considered a 'real' target.
 maxGaussiansJ = 100;%Maximum number of Gaussians after pruning. NOT USED in this implementation.
 
 %The previous iteration's mean/weight/covariance. Set in GM_PHD_Prune
@@ -181,6 +184,13 @@ I2 = eye(2);%2x2 identify matrix, used to construct matrices
 Z2 = zeros(2);%2x2 zero matrix, used to construct matrices
 dt = 1; %One-second sampling period
 F = [ [I2, dt*I2]; [Z2 I2] ];%State transition matrix (motion model)
+
+B = []; %control input matrix
+
+cx = 329; %img width/2
+cy = 243; %img height/2
+f = 431; %focal length of cam
+
 sigma_v = 5; %Standard deviation of process noise is 5 m/(s^2)
 Q = sigma_v^2 * [ [1/4*dt^4*I2, 1/2*dt^3*I2]; [1/2*dt^3* I2, dt^2*I2] ]; %Process noise covariance, given in Vo&Ma.
 

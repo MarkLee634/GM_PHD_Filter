@@ -57,6 +57,7 @@ xlim([0 1000]);
 ylim([0 1000]);
 
 errorHistory= [];
+kHistory = [];
 zTrueHistory = [];
 maxError = 0;
 
