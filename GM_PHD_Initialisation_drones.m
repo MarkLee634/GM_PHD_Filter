@@ -37,6 +37,7 @@ else
     imu_bag = select(measure_bag, 'Topic', "/hummingbird0/imu");
 
     pos_array = read_array_pos(pos_bag, DOWN_SAMPLE);
+    imu_array = read_array_imu(imu_bag, DOWN_SAMPLE);
     
     DATA_SIZE = size(pos_array(1).x, 1)-20;
     
@@ -264,7 +265,39 @@ pos_array3.time = odom_time3;
 pos_array = [pos_arrayOne pos_arrayTwo pos_array3];
 end
 
+%% read imu to get ang vel
+function imu_array = read_array_imu(array, DOWN_SAMPLE)
 
+robot_imuStructs = readMessages(array,'DataFormat','struct');
+x = cellfun(@(m) double(m.AngularVelocity.X),robot_imuStructs);
+y = cellfun(@(m) double(m.AngularVelocity.Y),robot_imuStructs);
+z = cellfun(@(m) double(m.AngularVelocity.Z),robot_imuStructs);
+time = cellfun(@(m) double(double(m.Header.Stamp.Sec)+double(m.Header.Stamp.Nsec)*10e-10),robot_imuStructs);
+
+imu_array = [x y z time];
+
+
+end
+
+%% read bag pose data
+function pos_array = read_odom_pos(array, DOWN_SAMPLE)
+
+odom_posStructs = readMessages(array,'DataFormat','struct');
+x = cellfun(@(m) double(m.Pose.Pose.Position.X),odom_posStructs);
+y = cellfun(@(m) double(m.Pose.Pose.Position.Y),odom_posStructs);
+z = cellfun(@(m) double(m.Pose.Pose.Position.Z),odom_posStructs);
+time = cellfun(@(m) double(double(m.Header.Stamp.Sec)+double(m.Header.Stamp.Nsec)*10e-10),odom_posStructs);
+
+
+% pos_arrayOne.x = x(1:DOWN_SAMPLE:end); %x;
+% pos_arrayOne.y = y(1:DOWN_SAMPLE:end); %y;
+% pos_arrayOne.z = z(1:DOWN_SAMPLE:end); %z;
+% pos_arrayOne.time = odom_time;
+% 
+
+
+pos_array = [x y z time];
+end
 
 %% read bbox to get pos data 1,2,3
 function [pos_array] = read_bbox_pos(array, DOWN_SAMPLE)
@@ -295,22 +328,3 @@ pos_array = poseArray;
 
 end
 
-%% read bag pose data
-function pos_array = read_odom_pos(array, DOWN_SAMPLE)
-
-odom_posStructs = readMessages(array,'DataFormat','struct');
-x = cellfun(@(m) double(m.Pose.Pose.Position.X),odom_posStructs);
-y = cellfun(@(m) double(m.Pose.Pose.Position.Y),odom_posStructs);
-z = cellfun(@(m) double(m.Pose.Pose.Position.Z),odom_posStructs);
-time = cellfun(@(m) double(double(m.Header.Stamp.Sec)+double(m.Header.Stamp.Nsec)*10e-10),odom_posStructs);
-
-
-% pos_arrayOne.x = x(1:DOWN_SAMPLE:end); %x;
-% pos_arrayOne.y = y(1:DOWN_SAMPLE:end); %y;
-% pos_arrayOne.z = z(1:DOWN_SAMPLE:end); %z;
-% pos_arrayOne.time = odom_time;
-% 
-
-
-pos_array = [x y z time];
-end

@@ -21,7 +21,9 @@ for i = 1: size(mk_minus_1,2)
     B = [B, bcol];
 end
 
-u = [0 0 0]'; %no imu testing here
+rotm_imu_cam = [0 -1 0 ; 0 0 -1; 1 0 0];
+%u = [0 0 0]'; %no imu testing here
+u = rotm_imu_cam*simCameraVel;
 
 for j = 1:size(mk_minus_1,2)
     wk_minus_1(j) = prob_survival * wk_minus_1(j);
