@@ -32,7 +32,7 @@ if(USE_REAL_DATA)
     
 else
     %% Read Rosbag and fill in PX, PY
-    measure_bag = rosbag("../../rosbag/drone_2d_3drones_imu.bag");
+    measure_bag = rosbag("../../rosbag/drone_2d_3drones_imu_move_camTime.bag");
     pos_bag = select(measure_bag, 'Topic', "/hummingbird0/track/bounding_box");
     imu_bag = select(measure_bag, 'Topic', "/hummingbird0/imu");
 
@@ -158,7 +158,7 @@ P_bar_k_fixed = zeros(4,4*NUM_DRONES);
 %purposes. This is updated in the end of GM_PHD_Estimate
 X_k_history = [];
 
-
+u_history = [];
 
 %Step 7: Create birthed/spawned targets to append to list next iteration
 %These are set in GM_PHD_Create_Birth
@@ -183,17 +183,18 @@ clutter_intensity = @(z_cartesian) lambda_c * V * unifpdf_2d(xrange, yrange, z_c
 %Prediction models - used in steps 1 & 2 for prediction
 I2 = eye(2);%2x2 identify matrix, used to construct matrices
 Z2 = zeros(2);%2x2 zero matrix, used to construct matrices
-dt = 1; %One-second sampling period
+dt = 0.125; %One-second sampling period
 F = [ [I2, dt*I2]; [Z2 I2] ];%State transition matrix (motion model)
 
 B = []; %control input matrix
 
-cx = 329; %img width/2
-cy = 243; %img height/2
-f = 431; %focal length of cam
+cx = 180; %img width/2
+cy = 120; %img height/2
+f = 120; %focal length of cam
 
 sigma_v = 5; %Standard deviation of process noise is 5 m/(s^2)
 Q = sigma_v^2 * [ [1/4*dt^4*I2, 1/2*dt^3*I2]; [1/2*dt^3* I2, dt^2*I2] ]; %Process noise covariance, given in Vo&Ma.
+%Q = [dt^2/2 0 0 0; 0 dt^2/2 0 0; 0 0 dt 0 ; 0 0 0 dt];
 
 %% Birth model. This is a Poisson random finite set.
 %We only use the first two elements as the initial velocities are unknown
@@ -212,8 +213,8 @@ else
     
 end
 
-covariance_birth = diag([10, 10, 5, 5]');%Used in birth_intensity function
-covariance_spawn = diag([10, 10, 5, 5]');%Used in spawn_intensity function
+covariance_birth = diag([20, 20, 8, 8]');%Used in birth_intensity function
+covariance_spawn = diag([20, 20, 8, 8]');%Used in spawn_intensity function
 covariance_spawn = max(covariance_spawn, 10^-6);%Used in spawn_intensity function
 
 birth_intensity = @(x) (0.1 * mvnpdf(x(1:2)', birth_mean1(1:2)', covariance_birth(1:2,1:2)) + 0.1 * mvnpdf(x(1:2)', birth_mean2(1:2)', covariance_birth(1:2,1:2)) + (0.1 * mvnpdf(x(1:2)', birth_mean3(1:2)', covariance_birth(1:2,1:2))) );%Generate birth weight. This only takes into account the position, not the velocity, as Vo&Ma don't say if they use velocity and I assume that they don't. Taken from page 8 of their paper.
@@ -226,7 +227,7 @@ prob_detection = 1; %Probability of target detection. Used in recalculating weig
 if(USE_EKF == 0)
     H = [I2, Z2];%Observation matrix for position. Not used, but if you wanted to cut back to just tracking position, might be useful.
     H2 = eye(4);%Observation matrix for position and velocity. This is the one we actually use, in GM_PHD_Construct_Update_Components
-    sigma_r = 5; %Standard deviation of measurement noise is 10m. Used in creating R matrix (below)
+    sigma_r = 2; % measurement noise 
     R = sigma_r^2 * I2;%Sensor noise covariance. used in R2 (below)
     R2 = [ [R, Z2]; [Z2, 2*R] ];%Measurement covariance, expanded to both position & velocity. Used in GM_PHD_Construct_Update_Components. NOTE: This assumes that speed measurements have the same covariance as position measurements. I have no mathematical justification for this.
 end
