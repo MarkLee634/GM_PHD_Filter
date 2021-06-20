@@ -32,7 +32,7 @@ if(USE_REAL_DATA)
     
 else
     %% Read Rosbag and fill in PX, PY
-    measure_bag = rosbag("../../rosbag/drone_2d_3drones_imu_move_camTime.bag");
+    measure_bag = rosbag("../../rosbag/drone_2d_3drones_imu_move_cam.bag");
     pos_bag = select(measure_bag, 'Topic', "/hummingbird0/track/bounding_box");
     imu_bag = select(measure_bag, 'Topic', "/hummingbird0/imu");
 
@@ -183,7 +183,7 @@ clutter_intensity = @(z_cartesian) lambda_c * V * unifpdf_2d(xrange, yrange, z_c
 %Prediction models - used in steps 1 & 2 for prediction
 I2 = eye(2);%2x2 identify matrix, used to construct matrices
 Z2 = zeros(2);%2x2 zero matrix, used to construct matrices
-dt = 0.125; %One-second sampling period
+dt = 0.1205; %One-second sampling period
 F = [ [I2, dt*I2]; [Z2 I2] ];%State transition matrix (motion model)
 
 B = []; %control input matrix

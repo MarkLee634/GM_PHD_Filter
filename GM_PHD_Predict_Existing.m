@@ -28,14 +28,14 @@ u = rotm_imu_cam*simCameraVel * dt ;
 % u = simCameraVel;
 u_history = [u_history u];
 
-if k >60
+if k >5
     stophere =0;
 end
 
 
 for j = 1:size(mk_minus_1,2)
     wk_minus_1(j) = prob_survival * wk_minus_1(j);
-%     mk_minus_1(:,j) = F * mk_minus_1(:,j) %without rotation velocity.
+%     mk_minus_1(:,j) = F * mk_minus_1(:,j); %without rotation velocity.
     
     %include rotation velocity (imu reading) as well
     % X_k+1 = A*X_k + B*u  

@@ -69,11 +69,11 @@ while (k < endTime)%k = timestep
     
     %Step 1: Prediction for birthed/spawned targets
     GM_PHD_Predict_Birth;
-    m_birth_print = vpa(m_birth)
+    %m_birth_print = vpa(m_birth)
     
     %Step 2: Prediction for existing targets
     GM_PHD_Predict_Existing;
-    mk_k_minus_1_print = vpa(mk_k_minus_1)
+    mk_k_minus_1_print = vpa(mk_k_minus_1);
     
     %Step 3: Construction of PHD update components
     GM_PHD_Construct_Update_Components;
